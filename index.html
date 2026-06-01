@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>FeelFlix 🎬</title>
+<style>
+  :root {
+    --red: #E50914;
+    --red-dim: #b0060f;
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0f0f5;
+    --muted: #7a7a92;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ─── SPLASH ─────────────────────────────────────── */
+  #splash {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: #050508;
+    cursor: pointer;
+    transition: opacity 0.7s ease, visibility 0.7s ease;
+  }
+  #splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  .splash-bg { position: absolute; inset: 0; overflow: hidden; }
+  .splash-bg::before {
+    content: '';
+    position: absolute; inset: -50%;
+    background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(229,9,20,0.22) 0%, transparent 70%);
+    animation: pulseGlow 3s ease-in-out infinite alternate;
+  }
+  @keyframes pulseGlow {
+    from { transform: scale(1); opacity: 0.7; }
+    to   { transform: scale(1.15); opacity: 1; }
+  }
+  .splash-bg::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.35; pointer-events: none;
+  }
+
+  .splash-content {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    animation: splashIn 1s cubic-bezier(0.22,1,0.36,1) forwards;
+    opacity: 0;
+  }
+  @keyframes splashIn {
+    from { opacity: 0; transform: scale(0.88) translateY(24px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .splash-icon {
+    font-size: 64px; line-height: 1;
+    filter: drop-shadow(0 0 32px rgba(229,9,20,0.7));
+    animation: iconFloat 3s ease-in-out infinite;
+  }
+  @keyframes iconFloat {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+  }
+
+  .splash-logo {
+    font-family: 'Arial Narrow', 'Arial', sans-serif;
+    font-weight: 900;
+    font-size: clamp(64px, 18vw, 100px);
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    color: var(--red);
+    text-shadow: 0 0 60px rgba(229,9,20,0.6), 0 0 120px rgba(229,9,20,0.2), 0 4px 24px rgba(0,0,0,0.8);
+    line-height: 1;
+  }
+
+  .splash-tagline {
+    font-size: clamp(11px, 3vw, 14px);
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 300;
+  }
+
+  .splash-cta {
+    margin-top: 48px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  .splash-cta span {
+    font-size: 11px; color: var(--muted); letter-spacing: 3px; text-transform: uppercase;
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+  .splash-line {
+    width: 48px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    animation: linePulse 2s ease-in-out infinite;
+  }
+  @keyframes linePulse { 0%,100% { width: 48px; opacity: 1; } 50% { width: 88px; opacity: 0.4; } }
+
+  /* ─── MAIN APP ────────────────────────────────────── */
+  #app {
+    min-height: 100vh; max-width: 480px;
+    margin: 0 auto; padding: 0 0 48px;
+    opacity: 0; transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  #app.visible { opacity: 1; transform: translateY(0); }
+
+  .header { padding: 32px 24px 22px; text-align: center; position: relative; }
+  .header::after {
+    content: ''; position: absolute; bottom: 0; left: 24px; right: 24px; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  }
+  .header-logo {
+    font-family: 'Arial Narrow', 'Arial', sans-serif;
+    font-weight: 900; font-size: 38px; letter-spacing: 5px;
+    text-transform: uppercase; color: var(--red);
+    text-shadow: 0 0 24px rgba(229,9,20,0.45); line-height: 1;
+  }
+  .header-sub {
+    font-size: 11px; color: var(--muted); letter-spacing: 2.5px;
+    text-transform: uppercase; margin-top: 6px; font-weight: 300;
+  }
+
+  .section { padding: 28px 20px 0; }
+  .section-label {
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 16px; padding-left: 2px;
+  }
+  .mood-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .mood-btn {
+    position: relative; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 16px; padding: 18px 12px;
+    cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 7px;
+    transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+    overflow: hidden; -webkit-user-select: none; user-select: none;
+  }
+  .mood-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(229,9,20,0.14), transparent 70%);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .mood-btn:active { transform: scale(0.93); }
+  .mood-btn.active {
+    border-color: var(--red); background: var(--surface2);
+    box-shadow: 0 0 0 1px var(--red), 0 8px 32px rgba(229,9,20,0.22);
+    transform: scale(1.04);
+  }
+  .mood-btn.active::before { opacity: 1; }
+  .mood-emoji { font-size: 32px; line-height: 1; }
+  .mood-label { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 0.3px; }
+
+  .result-wrapper { padding: 24px 20px 0; }
+  #result-label {
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 12px; padding-left: 2px; display: none;
+  }
+
+  .result-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 26px; position: relative; overflow: hidden;
+    min-height: 168px; display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s ease;
+  }
+  .result-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--red), #ff6060, #ffb347, #ff6060, var(--red));
+    background-size: 300%; animation: shimmer 3s linear infinite;
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .result-card.has-result::before { opacity: 1; }
+  @keyframes shimmer { 0% { background-position: 0% } 100% { background-position: 300% } }
+
+  .result-empty { text-align: center; }
+  .result-empty-icon { font-size: 40px; margin-bottom: 10px; opacity: 0.35; }
+  .result-empty-text { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+  .result-content { width: 100%; animation: cardIn 0.5s cubic-bezier(0.22,1,0.36,1); }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .result-mood-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(229,9,20,0.1); border: 1px solid rgba(229,9,20,0.22);
+    border-radius: 20px; padding: 5px 14px;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: #ff7070; margin-bottom: 14px; font-weight: 600;
+  }
+  .result-title {
+    font-family: 'Arial Narrow', 'Arial', sans-serif;
+    font-weight: 900; font-size: 24px; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--text); line-height: 1.15; margin-bottom: 12px;
+  }
+  .result-reason { font-size: 13px; color: var(--muted); line-height: 1.7; font-weight: 300; }
+  .result-genre { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .genre-tag {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 4px 10px;
+    font-size: 11px; color: var(--muted); letter-spacing: 0.5px;
+  }
+
+  .thinking { display: flex; flex-direction: column; align-items: center; gap: 14px; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .thinking-text { font-size: 12px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  .dots { display: flex; gap: 7px; }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--red);
+    animation: dotBounce 1.2s ease-in-out infinite;
+  }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dotBounce {
+    0%,80%,100% { transform: translateY(0); opacity: 0.3; }
+    40%          { transform: translateY(-10px); opacity: 1; }
+  }
+
+  .surprise-wrap { padding: 20px 20px 0; }
+  .surprise-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #E50914 0%, #b0060f 100%);
+    border: none; border-radius: 16px; padding: 19px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-size: 15px; font-weight: 700; color: #fff; letter-spacing: 1px; text-transform: uppercase;
+    box-shadow: 0 4px 28px rgba(229,9,20,0.38), inset 0 1px 0 rgba(255,255,255,0.12);
+    transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+    position: relative; overflow: hidden;
+  }
+  .surprise-btn::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent 60%);
+  }
+  .surprise-btn:active { transform: scale(0.96); box-shadow: 0 2px 12px rgba(229,9,20,0.3); }
+  .surprise-btn:hover  { transform: scale(1.02); box-shadow: 0 8px 36px rgba(229,9,20,0.5); }
+  .dice-icon { font-size: 20px; }
+
+  .footer { margin-top: 40px; text-align: center; font-size: 11px; color: var(--muted); letter-spacing: 1.5px; }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-bg"></div>
+  <div class="splash-content">
+    <div class="splash-icon">🎬</div>
+    <div class="splash-logo">FeelFlix</div>
+    <div class="splash-tagline">Pick your mood. Watch your story.</div>
+    <div class="splash-cta">
+      <div class="splash-line"></div>
+      <span>Tap to continue</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="header">
+    <div class="header-logo">FeelFlix 🎬</div>
+    <div class="header-sub">Your mood. Your movie.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">How are you feeling?</div>
+    <div class="mood-grid">
+      <button class="mood-btn" data-mood="happy"   onclick="selectMood(this)"><span class="mood-emoji">😄</span><span class="mood-label">Happy</span></button>
+      <button class="mood-btn" data-mood="sad"     onclick="selectMood(this)"><span class="mood-emoji">😢</span><span class="mood-label">Sad</span></button>
+      <button class="mood-btn" data-mood="angry"   onclick="selectMood(this)"><span class="mood-emoji">😡</span><span class="mood-label">Angry</span></button>
+      <button class="mood-btn" data-mood="calm"    onclick="selectMood(this)"><span class="mood-emoji">😌</span><span class="mood-label">Calm</span></button>
+      <button class="mood-btn" data-mood="excited" onclick="selectMood(this)" style="grid-column:1/-1;"><span class="mood-emoji">⚡</span><span class="mood-label">Excited</span></button>
+    </div>
+  </div>
+
+  <div class="result-wrapper">
+    <div id="result-label">Your Pick</div>
+    <div class="result-card" id="result-card">
+      <div class="result-empty">
+        <div class="result-empty-icon">🎞️</div>
+        <div class="result-empty-text">Select a mood above<br>to get your perfect movie</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="surprise-wrap">
+    <button class="surprise-btn" onclick="surpriseMe()">
+      <span class="dice-icon">🎲</span> Surprise Me
+    </button>
+  </div>
+
+  <div class="footer">FeelFlix &copy; 2025 &nbsp;·&nbsp; Made with 🎬</div>
+</div>
+
+<script>
+  const movies = {
+    happy: [
+      { title: "🌅 The Secret Life of Walter Mitty", reason: "A beautiful adventure about chasing your dreams and finding joy in unexpected places.", genres: ["Adventure","Drama","Comedy"] },
+      { title: "🎵 La La Land", reason: "A magical musical about love, ambition, and the bittersweet beauty of chasing your passion.", genres: ["Musical","Romance","Drama"] },
+      { title: "🤸 Paddington 2", reason: "Pure heartwarming fun. Impossible to watch without smiling the entire time.", genres: ["Comedy","Family","Adventure"] },
+      { title: "🌈 Everything Everywhere All at Once", reason: "A wild, joyful multiverse adventure that celebrates life's beautiful chaos.", genres: ["Sci-Fi","Comedy","Action"] },
+    ],
+    sad: [
+      { title: "🕯️ Eternal Sunshine of the Spotless Mind", reason: "A poetic exploration of love and loss that makes your own sadness feel meaningful.", genres: ["Romance","Sci-Fi","Drama"] },
+      { title: "🌧️ Manchester by the Sea", reason: "Devastating and real — sometimes the most honest films are the most healing.", genres: ["Drama"] },
+      { title: "🦁 The Lion King (1994)", reason: "Let yourself cry. Grief is love with nowhere to go — this film knows that.", genres: ["Animation","Drama","Adventure"] },
+      { title: "💌 Her", reason: "A tender meditation on loneliness, connection, and what it means to truly love.", genres: ["Sci-Fi","Romance","Drama"] },
+    ],
+    angry: [
+      { title: "🥊 Whiplash", reason: "Channel your rage into focus. This film will light a fire in your chest.", genres: ["Drama","Thriller","Music"] },
+      { title: "💥 Mad Max: Fury Road", reason: "Pure cathartic fury. Fast, loud, relentless — exactly what anger needs.", genres: ["Action","Sci-Fi","Thriller"] },
+      { title: "⚔️ Gladiator", reason: "There's nothing like watching someone turn their rage into righteous power.", genres: ["Action","Drama","History"] },
+      { title: "🕵️ John Wick", reason: "Precise, stylish, unstoppable. A masterclass in controlled fury.", genres: ["Action","Thriller","Crime"] },
+    ],
+    calm: [
+      { title: "🌿 My Neighbor Totoro", reason: "Gentle, magical, and warm — like a soft breeze on a quiet afternoon.", genres: ["Animation","Fantasy","Family"] },
+      { title: "🏔️ Into the Wild", reason: "A meditative journey into solitude and the beauty of living simply.", genres: ["Adventure","Drama","Biography"] },
+      { title: "🌊 Princess Mononoke", reason: "Beautifully immersive world with a calming sense of ancient nature and balance.", genres: ["Animation","Fantasy","Adventure"] },
+      { title: "☕ Lost in Translation", reason: "Quiet, melancholic, and deeply peaceful. Perfect for an introspective evening.", genres: ["Drama","Romance"] },
+    ],
+    excited: [
+      { title: "🚀 Interstellar", reason: "Mind-bending, epic, and awe-inspiring — buckle up for the universe.", genres: ["Sci-Fi","Adventure","Drama"] },
+      { title: "🕷️ Spider-Man: Into the Spider-Verse", reason: "Pure kinetic energy. The most visually electric animated film ever made.", genres: ["Animation","Action","Superhero"] },
+      { title: "🌀 Inception", reason: "Dreams within dreams. Your mind won't stop racing long after the credits roll.", genres: ["Sci-Fi","Action","Thriller"] },
+      { title: "🏎‍🟀 Top Gun: Maverick", reason: "High-octane, heart-pounding, and insanely fun from first minute to last.", genres: ["Action","Drama","Thriller"] },
+    ],
+  };
+
+  const allMovies = Object.entries(movies).flatMap(([mood, list]) => list.map(m => ({ ...m, mood })));
+  const moodLabels = { happy:'😄 Happy', sad:'😢 Sad', angry:'😡 Angry', calm:'😌 Calm', excited:'⚡ Excited' };
+
+  // Splash — no external deps, works on file://
+  const splash = document.getElementById('splash');
+  const appEl  = document.getElementById('app');
+
+  function launchApp() {
+    splash.classList.add('hidden');
+    setTimeout(() => appEl.classList.add('visible'), 100);
+  }
+
+  splash.addEventListener('click', launchApp);
+  setTimeout(launchApp, 3000);
+
+  function selectMood(btn) {
+    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const list = movies[btn.dataset.mood];
+    const pick = list[Math.floor(Math.random() * list.length)];
+    showThinking(() => showResult(pick, btn.dataset.mood));
+  }
+
+  function surpriseMe() {
+    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+    const pick = allMovies[Math.floor(Math.random() * allMovies.length)];
+    showThinking(() => showResult(pick, pick.mood));
+  }
+
+  function showThinking(callback) {
+    const card = document.getElementById('result-card');
+    card.classList.remove('has-result');
+    card.innerHTML = '<div class="thinking"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div class="thinking-text">Finding your perfect movie...</div></div>';
+    setTimeout(callback, 1300);
+  }
+
+  function showResult(movie, mood) {
+    const card = document.getElementById('result-card');
+    card.classList.add('has-result');
+    document.getElementById('result-label').style.display = 'block';
+    const genres = movie.genres.map(g => '<span class="genre-tag">' + g + '</span>').join('');
+    card.innerHTML = '<div class="result-content"><div class="result-mood-badge">' + (moodLabels[mood] || '🎲 Surprise') + '</div><div class="result-title">' + movie.title + '</div><div class="result-reason">' + movie.reason + '</div><div class="result-genre">' + genres + '</div></div>';
+  }
+</script>
+</body>
+</html>
